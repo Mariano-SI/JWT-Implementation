@@ -79,9 +79,64 @@ app.post("/auth/register", async(req, res)=>{
     } catch (error) {
         res.status(error.statusCode || 500).json({
             error: error.message, 
-          });
+        });
     }    
 })
+
+//Rota de login
+
+app.post('/auth/user', async (req,res)=>{
+    const {email, password} = req.body;
+
+    try {
+        if (!email) {
+            const error = new Error("O email é obrigatório");
+            error.statusCode = 422; 
+            throw error;
+        }
+        if (!password) {
+            const error = new Error("A senha é obrigatória");
+            error.statusCode = 422; 
+            throw error;
+        }
+
+        //domain
+        const user = await User.findOne({email:email});
+
+        if(!user){
+            const error = new Error("Usuário não encontrado");
+            error.statusCode = 404; 
+            throw error;
+        }
+
+        const checkPassoword = await bcrypt.compare(password, user.password);
+
+        if(!checkPassoword){
+            const error = new Error("Senha incorreta");
+            error.statusCode = 401; 
+            throw error;
+        }
+        
+        const secret = process.env.SECRET;
+
+        const token = jwt.sign({
+            id: user._id,
+            //email:user.email
+        }, secret);
+
+
+        res.status(200).json({
+            message: "Registro bem-sucedido",
+            token
+        });
+
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            error: error.message, 
+        });
+    }
+})
+
 
 mongoose.connect(`mongodb+srv://${dbUser}:${dbPassword}@cluster0.6gwjivt.mongodb.net/?retryWrites=true&w=majority`).then(()=>{
     app.listen(3000, ()=>{
