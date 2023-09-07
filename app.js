@@ -15,6 +15,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 
 const User = require('./models/User');
+const checkToken = require('./checkToken');
 
 app.get('/', (req,res)=>{
     res.status(200).json({
@@ -83,8 +84,7 @@ app.post("/auth/register", async(req, res)=>{
     }    
 })
 
-//Rota de login
-
+//Rota de login, cria e devolve token caso credenciais estejam corretas
 app.post('/auth/user', async (req,res)=>{
     const {email, password} = req.body;
 
@@ -135,6 +135,33 @@ app.post('/auth/user', async (req,res)=>{
             error: error.message, 
         });
     }
+})
+
+
+//Private route, get user infos
+app.get("/users/:id", checkToken, async(req, res)=>{
+
+    const {id} = req.params;
+
+    try {
+        const user = await User.findById(id, "-password");
+
+        if(!user){
+            const error = new Error("Usuário não encontrado");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        res.status(200).json({
+            user
+        });
+
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            error: error.message, 
+        });
+    }
+
 })
 
 
