@@ -15,7 +15,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 
 const User = require('./models/User');
-const checkToken = require('./checkToken');
+const checkToken = require('./middlewares/checkToken');
+const checkIsAdmin = require('./middlewares/checkIsAdmin');
 
 app.get('/', (req,res)=>{
     res.status(200).json({
@@ -26,7 +27,7 @@ app.get('/', (req,res)=>{
 /*Rota para criar usuários, por padrão ela é publica
  e apenas deve mandar parametros corretos */
 app.post("/auth/register", async(req, res)=>{
-    const {name, email, password, confirmPassword} = req.body;
+    const {name, email, password, confirmPassword, isAdmin} = req.body;
 
     try {
         //validações de entradas, controller
@@ -68,7 +69,8 @@ app.post("/auth/register", async(req, res)=>{
         const user = new User({
             name,
             email,
-            password: encryptedPassword
+            password: encryptedPassword,
+            isAdmin: isAdmin ? isAdmin: false
         });
 
         await user.save().then(()=>{
@@ -121,10 +123,10 @@ app.post('/auth/user', async (req,res)=>{
 
         const token = jwt.sign({
             id: user._id,
-            //email:user.email
+            email:user.email,
+            isAdmin: user.isAdmin
         }, secret);
-
-
+       
         res.status(200).json({
             message: "Registro bem-sucedido",
             token
@@ -138,7 +140,7 @@ app.post('/auth/user', async (req,res)=>{
 })
 
 
-//Private route, get user infos
+//Private route, apenas usuários authenticados acessam
 app.get("/users/:id", checkToken, async(req, res)=>{
 
     const {id} = req.params;
@@ -162,6 +164,27 @@ app.get("/users/:id", checkToken, async(req, res)=>{
         });
     }
 
+});
+
+//Admin Route, apenas admins podem acessar;
+app.delete("/users/:id", checkIsAdmin ,async(req,res)=>{
+    const {id} = req.params;
+
+    try {
+        const deletedUser = await User.findByIdAndDelete(id);
+
+        if(!deletedUser){
+            const error = new Error("Usuário não encontrado");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        res.status(200).json({message:"Usuário deletado com sucesso!"});
+    } catch (error) {
+        res.status(error.statusCode || 500).json({
+            error: error.message, 
+        });
+    }
 })
 
 
