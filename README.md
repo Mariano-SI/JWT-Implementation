@@ -1,4 +1,4 @@
-# Microserviço de Autenticação com JWT em Node.js e MongoDB
+# Autenticação de Microserviço com JWT em Node.js e MongoDB
 
 Este repositório foi criado como parte de um estudo pessoal sobre autenticação de microserviços utilizando JSON Web Tokens (JWT). Optei por implementar essa solução usando o framework Node.js e o banco de dados NoSQL MongoDB, considerando essa uma stack simples de se implementar e entender.
 
